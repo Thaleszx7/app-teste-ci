@@ -25,7 +25,8 @@ jobs:
           sudo chown -R www-data:www-data .git
 
           # Atualizar código
-          git pull origin main
+          git fetch --all
+          git reset --hard origin/main
 
           # Garantir que os diretórios existam
           sudo mkdir -p writable/{cache,logs,session,uploads}
