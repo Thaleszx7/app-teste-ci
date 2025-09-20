@@ -18,7 +18,7 @@
 <body class="bg-light">
     <div class="container py-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3">Produtos Testes</h1>
+            <h1 class="h3">Produtos</h1>
             <a href="/produtos/create" class="btn btn-primary">Novo Produto</a>
         </div>
         <div class="table-responsive">
