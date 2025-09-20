@@ -1,27 +1,41 @@
-name: Deploy to GCP VM
+name: Deploy to Production
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.GCP_VM_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.GCP_VM_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy to VM
-        run: |
-          ssh ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_HOST }} "mkdir -p ~/app"
-          scp -r ./* ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_HOST }}:~/app
-          ssh ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_HOST }} "cd ~/app && docker-compose up -d --build || pm2 restart all || systemctl restart apache2"
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v0.1.8
+      with:
+        host: ${{ secrets.GCP_VM_HOST }}
+        username: ${{ secrets.GCP_VM_USER }}
+        key: ${{ secrets.GCP_VM_SSH_KEY }}
+        script: |
+          cd /var/www/app-teste-ci
+          git pull origin main
+          
+          # Garantir que os diretórios existam
+          sudo mkdir -p writable/cache
+          sudo mkdir -p writable/logs
+          sudo mkdir -p writable/session
+          sudo mkdir -p writable/uploads
+          
+          # Corrigir permissões
+          sudo chown -R www-data:www-data writable/
+          sudo chmod -R 775 writable/
+          
+          # Instalar/atualizar dependências se necessário
+          if [ -f "composer.json" ]; then
+            composer install --no-dev --optimize-autoloader
+          fi
+          
+          # Reiniciar serviços
+          sudo systemctl reload nginx
+          sudo systemctl reload php8.2-fpm
+          
+          echo "Deploy completed successfully!"
