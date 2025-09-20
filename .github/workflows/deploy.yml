@@ -7,7 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Deploy to server
       uses: appleboy/ssh-action@v0.1.8
@@ -20,27 +20,27 @@ jobs:
 
           # Corrigir problema do Git "dubious ownership"
           git config --global --add safe.directory /var/www/app-teste-ci
-          
+
+          # Corrigir permissões do .git para evitar erro de fetch
+          sudo chown -R www-data:www-data .git
+
           # Atualizar código
           git pull origin main
-          
+
           # Garantir que os diretórios existam
-          sudo mkdir -p writable/cache
-          sudo mkdir -p writable/logs
-          sudo mkdir -p writable/session
-          sudo mkdir -p writable/uploads
-          
-          # Corrigir permissões
-          sudo chown -R www-data:www-data writable/
+          sudo mkdir -p writable/{cache,logs,session,uploads}
+
+          # Corrigir permissões de execução
+          sudo chown -R www-data:www-data writable/ .git
           sudo chmod -R 775 writable/
-          
-          # Instalar/atualizar dependências
+
+          # Instalar dependências PHP
           if [ -f "composer.json" ]; then
-            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+            composer install --no-interaction --prefer-dist --optimize-autoloader
           fi
-          
+
           # Reiniciar serviços
           sudo systemctl reload nginx
           sudo systemctl reload php8.2-fpm
-          
-          echo " Deploy completed successfully!"
+
+          echo "✅ Deploy completed successfully!"
